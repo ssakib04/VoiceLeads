@@ -1,5 +1,10 @@
+# Dependencies
 node_modules/
-.next/
+
+# Environment
+.env
+.env.local
+*.env.*.next/
 dist/
 build/
 *.log

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VoiceLeads — AI call agents that fill your pipeline</title>
+<style>
+  :root{--bg:#0b1020;--card:#141a30;--acc:#e2136e;--txt:#e8ecf8;--mut:#9aa5c4}
+  *{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--txt)}
+  header{display:flex;justify-content:space-between;padding:1rem 2rem;align-items:center}
+  .logo{font-weight:800;font-size:1.2rem}.logo span{color:var(--acc)}
+  main{max-width:1000px;margin:0 auto;padding:1rem 1.5rem 4rem}
+  h1{font-size:2.2rem;line-height:1.2}h1 em{color:var(--acc);font-style:normal}
+  .mut{color:var(--mut)}.btn{background:var(--acc);border:0;color:#fff;padding:.7rem 1.3rem;border-radius:8px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+  .btn.sec{background:transparent;border:1px solid var(--mut)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-top:1.5rem}
+  .card{background:var(--card);border-radius:12px;padding:1.2rem}
+  .price{font-size:1.6rem;font-weight:800}.price small{font-size:.8rem;color:var(--mut);font-weight:400}
+  #app{display:none}#site{display:block}
+  .row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+  input,textarea,select{background:#0e1428;border:1px solid #2a3352;color:var(--txt);padding:.6rem .8rem;border-radius:8px;font:inherit}
+  textarea{width:100%;min-height:90px}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;padding:.45rem .5rem;border-bottom:1px solid #222b4a}
+  .tag{padding:.1rem .5rem;border-radius:99px;font-size:.75rem}.hot{background:#e2136e}.warm{background:#b8860b}.cold{background:#345}
+  #log{max-height:260px;overflow:auto;background:#0e1428;border-radius:8px;padding:.6rem;font-size:.85rem}
+  .me{color:#7dd3fc}.ai{color:#fda4af}
+  nav button{margin-right:.4rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Voice<span>Leads</span></div>
+  <div id="navArea"><a class="btn" href="#" onclick="showAuth()">Sign in / Start free trial</a></div>
+</header>
+
+<!-- landing -->
+<main>
+<section id="site">
+  <h1>AI phone agents that <em>call your leads</em>, qualify them, and hand you a filled pipeline.</h1>
+  <p class="mut">Claude conversation brain ✕ ElevenLabs voice ✕ automatic monthly billing with bKash. Built for Bangladeshi teams.</p>
+  <div class="row" style="margin-top:1rem">
+    <a class="btn" href="#" onclick="showAuth()">Start 7-day free trial</a>
+    <a class="btn sec" href="#pricing">See pricing</a>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>📞 Inbound answering</h3><p class="mut">Never miss a lead. The AI answers, qualifies, and books appointments 24/7.</p></div>
+    <div class="card"><h3>🤖 Outbound campaigns</h3><p class="mut">Upload a consented list — the agent calls, scores intent (hot/warm/cold), extracts data automatically.</p></div>
+    <div class="card"><h3>💾 Your CRM fills itself</h3><p class="mut">Every call ends as a structured lead: summary, budget, timeline, objections. Export CSV anytime.</p></div>
+  </div>
+  <div class="grid" id="pricing"></div>
+</section>
+
+<!-- auth -->
+<section id="auth" style="display:none" class="card">
+  <h3>Create account / Sign in</h3>
+  <div class="row">
+    <input id="email" type="email" placeholder="you@company.com" autocomplete="username">
+    <input id="pw" type="password" placeholder="password (min 8)" autocomplete="current-password">
+    <button class="btn" onclick="login(false)">Sign up (free trial)</button>
+    <button class="btn sec" onclick="login(true)">Log in</button>
+  </div>
+  <p class="mut" id="authMsg"></p>
+</section>
+
+<!-- app dashboard -->
+<section id="app">
+  <nav class="row" style="margin-bottom:1rem">
+    <button class="btn sec" onclick="tab('dash')">Dashboard</button>
+    <button class="btn sec" onclick="tab('leads')">Leads</button>
+    <button class="btn sec" onclick="tab('camp')">Campaigns</button>
+    <button class="btn sec" onclick="tab('bill')">Billing (bKash)</button>
+    <button class="btn sec" onclick="tab('demo')">Try the AI live</button>
+    <button class="btn sec" onclick="logout()">Log out</button>
+  </nav>
+
+  <div id="t-dash" class="card"><h3>Your workspace</h3><pre id="dashOut" style="white-space:pre-wrap"></pre></div>
+
+  <div id="t-leads" class="card" style="display:none">
+    <h3>Leads</h3>
+    <div class="row">
+      <input id="lphone" placeholder="+8801700000000"><input id="lname" placeholder="Name">
+      <label class="mut"><input type="checkbox" id="lconsent"> caller gave consent to be called</label>
+      <button class="btn" onclick="addLead()">Add lead</button>
+      <button class="btn sec" onclick="exportLeads()">Export CSV</button>
+    </div>
+    <table id="leadTable"><thead><tr><th>Phone</th><th>Name</th><th>Score</th><th>Intent</th><th>Summary</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div id="t-camp" class="card" style="display:none">
+    <h3>Campaigns</h3>
+    <div class="row"><input id="cname" placeholder="Campaign name"></div>
+    <textarea id="cgoal" placeholder="Goal prompt, e.g.: Call shop owners, introduce our delivery service, ask about monthly parcel volume, book a demo if interested."></textarea>
+    <div class="row" style="margin-top:.6rem">
+      <button class="btn" onclick="createCamp()">Create</button>
+      <button class="btn sec" onclick="startCamp()">Start dialing (mock carrier in dev)</button>
+    </div>
+    <table id="campTable"><thead><tr><th>Name</th><th>Status</th><th>Goal</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div id="t-bill" class="card" style="display:none">
+    <h3>Subscription & bKash</h3>
+    <div id="billState" class="mut"></div>
+    <div class="row" style="margin-top:.8rem"><select id="planSel"></select>
+      <button class="btn" onclick="checkout()">Subscribe</button>
+      <button class="btn sec" onclick="payNow()">Pay first month (bKash)</button>
+      <button class="btn sec" onclick="autoRenew()">Enable auto-renewal</button>
+      <button class="btn sec" onclick="cancelSub()">Cancel</button>
+    </div>
+    <p class="mut">You'll be redirected to bKash's official payment page. Auto-renewal uses a bKash mandate agreement — you approve once in the bKash app, we charge monthly.</p>
+  </div>
+
+  <div id="t-demo" class="card" style="display:none">
+    <h3>Live demo — talk to your AI agent</h3>
+    <div id="log"></div>
+    <div class="row" style="margin-top:.6rem"><input id="sayIn" placeholder="Say something as the customer…" style="flex:1"><button class="btn" onclick="say()">Send</button></div>
+    <p class="mut">This WebSocket session runs your real Claude system prompt. Real phone calls use Vapi/Twilio/ElevenLabs webhooks.</p>
+  </div>
+</section>
+</main>
+<script src="/js/app.js"></script>
+</body>
+</html>

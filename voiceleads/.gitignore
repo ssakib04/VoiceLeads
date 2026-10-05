@@ -1,0 +1,10 @@
+# Node
+node_modules/
+.env
+*.log
+# Local database (never commit customer data!)
+data/
+*.db
+*.db-wal
+*.db-shm
+.DS_Store
