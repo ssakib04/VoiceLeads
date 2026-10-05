@@ -1,0 +1,27 @@
+{
+  "name": "voiceleads",
+  "version": "0.1.0",
+  "description": "AI voice-call & lead-generation SaaS: Anthropic Claude + ElevenLabs telephony with bKash subscription billing",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "test": "node --test tests/"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@google/genai": "^2.27.0",
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "ws": "^8.22.0",
+    "zod": "^3.24.1"
+  }
+}
