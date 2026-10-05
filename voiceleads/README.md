@@ -1,9 +1,9 @@
-# VoiceLeads — AI voice-call & lead-generation SaaS (Claude ✕ ElevenLabs ✕ bKash)
+# VoiceLeads — AI voice-call & lead-generation SaaS (Gemini ✕ ElevenLabs ✕ bKash)
 
 **Yes, your idea is possible — this repo is a working starter that proves it end-to-end.**
 People sign up, get a 7-day trial, pay monthly via **bKash** (including automatic renewal),
 import leads, run AI **outbound/inbound call campaigns**, and every call is transcribed,
-summarized and scored into structured CRM data by **Anthropic Claude**, with **ElevenLabs** voices.
+summarized and scored into structured CRM data by **Google Gemini** (free tier — no Anthropic key needed; Claude still supported as fallback), with **ElevenLabs** voices.
 
 ## What's already wired and tested locally
 | Feature | Where | Status |
@@ -15,10 +15,14 @@ summarized and scored into structured CRM data by **Anthropic Claude**, with **E
 | Leads CRM: add, CSV import/export, dedupe per workspace, consent flag | `src/routes/workspaces.js` | ✅ tested |
 | Campaigns: goal prompt, quiet hours (9:00–20:00 Dhaka), daily minute caps, paced dialer worker | `workers/cron.js` | ✅ tested in mock mode |
 | Calls: webhook ingestion (Vapi / Twilio / ElevenLabs agent), transcripts, recordings, minute metering vs quota | `src/routes/callbacks.js` | ✅ tested (HMAC/key verification rejects forged calls) |
-| Lead generation from calls: Claude extracts summary/intent/score/budget/objections → updates or creates leads | `src/lib/anthropic.js` `extractLead()` | ✅ pipeline verified (needs your API key for the LLM step) |
+| Lead generation from calls: Gemini extracts summary/intent/score/budget/objections (native JSON schema mode) → updates or creates leads | `src/lib/gemini.js` `extractLead()` | ✅ pipeline verified end-to-end (reaches Google API; needs your free key) |
 | Live in-browser demo chat with your agent (WebSocket, session-authenticated) | `/realtime` | ✅ |
 | Security headers (helmet+CSP), CSRF (SameSite=Lax + Sec-Fetch-Site/X-Requested-With), input validation (zod), audit log, encrypted provider keys at rest (AES-256-GCM) | `server.js`, `src/lib/crypto.js` | ✅ negative tests passed |
 | Usage quotas: minutes left per plan enforced before any paid action (HTTP 402 when exhausted) | `workspaces.js` guard | ✅ tested |
+
+## 📘 New here? Start with TESTING-GEMINI.md
+Step-by-step: get a **free Gemini key**, test locally without any phone line, add a real
+number later, then host & deploy. Also see **DEPLOYING.md** for Railway/Render/Fly guides.
 
 ## Quick start
 ```bash

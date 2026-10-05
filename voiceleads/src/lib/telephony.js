@@ -5,11 +5,15 @@
 import crypto from 'node:crypto';
 import { getDb, id } from './db.js';
 import { decryptSecret } from './crypto.js';
-import { reply as claudeReply, extractLead } from '../lib/anthropic.js';
+import { reply as geminiReply, extractLead } from '../lib/gemini.js';
 
 function providerKey(ws, provider) {
   const row = getDb().prepare('SELECT secret_enc FROM credentials WHERE workspace_id=? AND provider=?').get(ws, provider);
   return row ? decryptSecret(row.secret_enc) : process.env[provider.toUpperCase() + '_API_KEY'];
+}
+
+export function brainProvider() {
+  return process.env.GEMINI_API_KEY ? 'gemini' : (process.env.ANTHROPIC_API_KEY ? 'anthropic' : null);
 }
 
 export function activeCarrier() {
@@ -38,8 +42,10 @@ export async function dialOutbound({ workspaceId, campaignId, leadId, toNumber }
       headers: { authorization: `Bearer ${providerKey(workspaceId, 'vapi')}`, 'content-type': 'application/json' },
       body: JSON.stringify({
         assistant: {
-          model: { provider: 'anthropic', model: 'claude-sonnet-4-5' },
-          voice: { provider: '11labs', voiceId: 'JBFqnCBsd6RMkjVDRZzb' },
+          // Brain = Google Gemini (free tier). Voice = ElevenLabs. Number = Vapi.
+          model: { provider: 'google', model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+                   temperature: 0.4 },
+          voice: { provider: '11labs', voiceId: process.env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb' },
           firstMessage: 'Hello! Am I speaking with the owner of the business?',
           serverUrl: `${process.env.BASE_URL}/calls/webhook/vapi`,
           serverApiKey: process.env.WEBHOOK_SECRET,
@@ -125,7 +131,7 @@ export function attachRealtime(wss, authenticate) {
         const s = sessions.get(ws); if (!s) return;
         if (msg.type === 'say') {
           s.messages.push({ role: 'user', content: String(msg.text).slice(0, 1200) });
-          const answer = await claudeReply({ workspaceId: s.workspaceId, messages: s.messages.slice(-12) });
+          const answer = await geminiReply({ workspaceId: s.workspaceId, messages: s.messages.slice(-12) });
           s.messages.push({ role: 'assistant', content: answer });
           ws.send(JSON.stringify({ type: 'reply', text: answer }));
         }

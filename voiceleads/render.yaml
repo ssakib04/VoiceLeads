@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: voiceleads-web
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm run migrate && npm run seed && node server.js
+    healthCheckPath: /healthz
+    envVarSecrets: [SESSION_SECRET, WEBHOOK_SECRET, AES_KEY, GEMINI_API_KEY, BKASH_APP_KEY, BKASH_APP_SECRET, BKASH_ID_TOKEN]
+  - type: worker
+    name: voiceleads-cron
+    runtime: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: node workers/cron.js
+    envVarSecrets: [SESSION_SECRET, WEBHOOK_SECRET, AES_KEY, GEMINI_API_KEY, BKASH_APP_KEY, BKASH_APP_SECRET, BKASH_ID_TOKEN]

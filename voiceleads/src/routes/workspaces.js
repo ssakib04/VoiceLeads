@@ -7,6 +7,8 @@ import { requireAuth, requireWorkspace } from '../lib/auth.js';
 import { encryptSecret } from '../lib/crypto.js';
 import { dialOutbound, activeCarrier } from '../lib/telephony.js';
 import { tts } from '../lib/elevenlabs.js';
+import { testConnection as testGemini } from '../lib/gemini.js';
+import { finalizeCall } from '../lib/telephony.js';
 
 export function workspaceRoutes() {
   const r = Router();
@@ -109,7 +111,10 @@ export function workspaceRoutes() {
       if (!lead) return res.status(422).json({ error: 'no consented leads to dial (mock)' });
       const out = await dialOutbound({ workspaceId: req.workspaceId, campaignId: camp.id, leadId: lead.id, toNumber: lead.phone });
       db.prepare(`UPDATE campaigns SET status='running' WHERE id=?`).run(camp.id);
-      return res.json({ ok: true, simulated: out });
+      // Run the SAME post-call pipeline real carriers use: Gemini extracts a structured
+      // lead from the (mock) transcript and minutes get metered against your quota.
+      const finalized = await finalizeCall(out.callId).catch(e => ({ error: String(e.message || e) }));
+      return res.json({ ok: true, simulated: out, extraction: finalized?.extracted_json ? JSON.parse(finalized.extracted_json) : null });
     }
     // real carriers: mark running; the worker does paced dialing respecting quiet hours.
     db.prepare(`UPDATE campaigns SET status='running' WHERE id=?`).run(camp.id);
@@ -149,7 +154,7 @@ export function workspaceRoutes() {
 
   // ---- per-workspace encrypted API keys ---------------------------------------
   r.put('/:wsId/credentials/:provider', requireWorkspace('owner'), (req, res) => {
-    const provider = ['anthropic', 'elevenlabs', 'vapi', 'twilio'].includes(req.params.provider) ? req.params.provider : null;
+    const provider = ['gemini', 'anthropic', 'elevenlabs', 'vapi', 'twilio'].includes(req.params.provider) ? req.params.provider : null;
     if (!provider) return res.status(422).json({ error: 'bad provider' });
     const secret = z.string().min(10).max(300).parse(req.body.secret);
     getDb().prepare(`INSERT INTO credentials (workspace_id, provider, secret_enc, hint) VALUES (?,?,?,?)
@@ -157,6 +162,14 @@ export function workspaceRoutes() {
       .run(req.workspaceId, provider, encryptSecret(secret), secret.slice(-4));
     audit({ workspace_id: req.workspaceId, user_id: req.user.id, action: 'key_store', ip: req.ip, meta: { provider } });
     res.json({ ok: true, hint: secret.slice(-4) }); // never echo the key back
+  });
+
+  // ---- Gemini sanity check: is my free API key working end-to-end? ----------
+  r.get('/:wsId/gemini/test', async (req, res) => {
+    try {
+      const out = await testGemini(req.workspaceId);
+      res.json(out);
+    } catch (e) { res.status(502).json({ error: String(e.message || e).slice(0, 300) }); }
   });
 
   return r;

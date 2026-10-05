@@ -1,10 +1,8 @@
-# Node
 node_modules/
 .env
 *.log
-# Local database (never commit customer data!)
-data/
-*.db
-*.db-wal
-*.db-shm
+data/*.db
+data/*.db-journal
+data/*.db-shm
+data/*.db-wal
 .DS_Store

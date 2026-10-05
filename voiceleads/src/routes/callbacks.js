@@ -38,8 +38,8 @@ export function callRoutes() {
       finalizeCall(meta.callId).catch(e => console.error(e));
       return res.json({ ok: true });
     }
-    // First-turn override: return our own system prompt so their platform uses OUR Claude config.
-    res.json({ model: { provider: 'anthropic', model: 'claude-sonnet-4-5' } });
+    // First-turn override: keep the call on OUR Gemini brain.
+    res.json({ model: { provider: 'google', model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' } });
   });
 
   // ---- ElevenLabs Conversational AI agent webhook ----------------------------
